@@ -1,0 +1,14 @@
+version: '3.5'
+services:
+  chat:
+    container_name: chat
+    environment:
+      POSTGRES_DB: chat
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+    # image: postgres:latest
+    build: .
+    volumes:
+      - ./:/var/lib/postgresql
+    ports:
+      - 5437:5432
