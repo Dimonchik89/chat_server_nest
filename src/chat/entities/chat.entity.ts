@@ -17,7 +17,10 @@ export class Chat extends Model {
   name: string;
 
   @Column
-  avatar: string
+  avatar: string;
+
+  @Column
+  owner: string;
 
   @HasMany(() => UserChat, {
     foreignKey: 'chatId',

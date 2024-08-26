@@ -7,7 +7,7 @@ import * as sharp from "sharp";
 
 @Injectable()
 export class FileService {
-  async saveFile(file): Promise<string> {
+  async saveFile(file: Express.Multer.File): Promise<string> {
     try {
       // const fileExtension = file.originalname.split(".").pop();
       const fileName = `${uuid.v4()}.webp`;
@@ -22,6 +22,20 @@ export class FileService {
         .toFormat("webp")
         .toFile(path.resolve(__dirname, "../..", "static/chatAvatar", fileName));
       return `/chatAvatar/${fileName}`;
+    } catch(error) {
+      return handleError(error)
+    }
+  }
+
+  async removeFile(filePath: string) {
+    try {
+      fs.unlink(path.join(__dirname, "../..", "static", filePath),
+      async error => {
+        if(error) {
+          return handleError(error)
+        }
+      })
+      return { message: "Success" }
     } catch(error) {
       return handleError(error)
     }

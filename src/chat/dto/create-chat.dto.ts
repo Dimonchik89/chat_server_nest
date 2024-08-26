@@ -5,9 +5,6 @@ export class CreateChatDto {
   name: string;
 
   @ApiProperty()
-  avatar: any;
-
-  @ApiProperty()
   userId: string;
 
   @ApiProperty()
