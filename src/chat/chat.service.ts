@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { Chat } from './entities/chat.entity';
@@ -6,58 +6,78 @@ import { handleError } from '../services/error';
 import { UserChat } from '../user-chat/entities/userchat.entity';
 import { FindMyChatsDto } from './dto/findMy-chats.dto';
 import { User } from '../user/entities/user.entity';
+import { AddUsersToChatDto } from './dto/add-users-to-chat.dto';
+import { FileService } from '../file/file.service';
 
 @Injectable()
 export class ChatService {
   constructor(
     @Inject("CHATS_REPOSITORY") private chatsRepository: typeof Chat,
     @Inject("USERS_REPOSITORY") private usersRepository: typeof User,
-    @Inject("USERCHATS_REPOSITORY") private userchatsRepository: typeof UserChat,
+    @Inject("USERCHATS_REPOSITORY") private userChatsRepository: typeof UserChat,
+    private readonly fileService: FileService
   ){}
 
 
-  async create(createChatDto: CreateChatDto) {
+  async create(createChatDto: CreateChatDto, avatar: Express.Multer.File) {
     try {
-      const { clientId, userId } = createChatDto;
-      const chat = await this.chatsRepository.create({userId: [userId, clientId]})
+      const { clientsId, userId, name } = createChatDto;
+      const avatarPath = await this.fileService.saveFile(avatar);
 
-      const userChat = await this.userchatsRepository.create({ chatId: chat.id, userId})
-      const clientChat = await this.userchatsRepository.create({ chatId: chat.id, userId: clientId })
+      const chat = await this.chatsRepository.create({name: name || `Chat_${userId}`, avatar: avatarPath })
 
-      // return {chat, userChat, clientChat}
-      return {userChat}
+      const userChat = await this.userChatsRepository.create({ chatId: chat.id, userId})
+
+      JSON.parse(clientsId).forEach(async (item) => {
+        await this.userChatsRepository.create({ chatId: chat.id, userId: item})
+      })
+
+      return {chat}
     } catch(error) {
-      handleError(error)
+      return handleError(error)
     }
   }
 
   async findMyChats(findMyChatsDto: FindMyChatsDto) {
     try {
       const { userId } = findMyChatsDto;
-      const allChats = await this.userchatsRepository.findAll({ where: { userId }, include: [
-        // {
-        //   model: this.chatsRepository,
-        //   as: "chat"
-        // },
-      ]});
+      const alluserChats = await this.userChatsRepository.findAll({ where: { userId }});
 
-      const allUserInAllChats = allChats.map(async (item) => {
-        const chat = await this.userchatsRepository.findAll({ where: { chatId: item.chatId }, include: [
+      const allUserInAllUserChats = alluserChats.map(async (item) => {
+        const chat = await this.userChatsRepository.findAll({ where: { chatId: item.chatId }, include: [
             {
               model: this.usersRepository,
               as: "user"
             },
+            {
+              model: this.chatsRepository,
+              as: "chat"
+            }
         ]})
         return chat
       })
 
-      let result = await Promise.all(allUserInAllChats)
+      let result = await Promise.all(allUserInAllUserChats)
       result = result.map(item => item.filter(el => el.userId !== userId))
 
 
-      return {allChats, result}
+      return {result}
     } catch(error) {
-      handleError(error)
+      return handleError(error)
+    }
+  }
+
+  async addUsersToChat(addUserToChatDto: AddUsersToChatDto) {
+    try {
+      const { chatId, usersId } = addUserToChatDto;
+
+      usersId.forEach(async (item) => {
+        await this.userChatsRepository.create({ chatId, userId: item })
+      })
+
+      return new HttpException("success", HttpStatus.OK);
+    } catch(error) {
+      return handleError(error)
     }
   }
 

@@ -15,7 +15,7 @@ export class ChatGateway {
 
   @Post()
   create(@MessageBody() createChatDto: CreateChatDto) {
-    return this.chatService.create(createChatDto);
+    // return this.chatService.create(createChatDto);
   }
 
   @SubscribeMessage('findAllChat')

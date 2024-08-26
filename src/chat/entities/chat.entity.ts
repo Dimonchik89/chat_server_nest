@@ -13,6 +13,12 @@ export class Chat extends Model {
   })
   id: string
 
+  @Column
+  name: string;
+
+  @Column
+  avatar: string
+
   @HasMany(() => UserChat, {
     foreignKey: 'chatId',
     as: 'userChat',
