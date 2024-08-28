@@ -1,9 +1,7 @@
-import { Controller, Post, Body, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, Patch, Param, Get, Delete, HttpException, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseInterceptors, UploadedFile, ParseFilePipeBuilder, HttpStatus, Patch, Param, Get, Delete, UseGuards} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { FindMyChatsDto } from './dto/findMy-chats.dto';
 import { ApiBody, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { UserChat } from '../user-chat/entities/userchat.entity';
 import { AddUsersToChatDto } from './dto/add-users-to-chat.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateChatDto } from './dto/update-chat.dto';
@@ -12,8 +10,11 @@ import { DeleteChatType, DeleteUserFromChatType, FindMyChatType } from '../types
 import { DefaultException } from '../types/exception';
 import { Chat } from './entities/chat.entity';
 import { CheckChatOwner } from './chat.guard';
+import { OptionalFilePipe } from '../helper/optional-file-pipe';
 
 const MAX_PROFILE_PICTURE_SIZE_IN_BYTES = 2 * 1024 * 1024;
+
+
 
 @Controller('chat')
 export class ChatController {
@@ -69,12 +70,7 @@ export class ChatController {
   updateChat(
     @Body() updateChatDto: UpdateChatDto,
     @Param("chatId") chatId: string,
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-      .addFileTypeValidator({ fileType: 'image/jpeg' })
-      .addMaxSizeValidator({ maxSize: MAX_PROFILE_PICTURE_SIZE_IN_BYTES })
-      .build({ errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY }),
-    ) avatar: Express.Multer.File ) {
+    @UploadedFile(OptionalFilePipe) avatar?: Express.Multer.File ) {
     return this.chatService.updateChat(updateChatDto, chatId, avatar);
   }
 
@@ -110,3 +106,7 @@ export class ChatController {
   //   // return this.userService.remove(+id);
   // }
 }
+
+
+
+
