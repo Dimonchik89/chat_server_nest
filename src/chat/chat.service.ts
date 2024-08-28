@@ -9,6 +9,8 @@ import { User } from '../user/entities/user.entity';
 import { AddUsersToChatDto } from './dto/add-users-to-chat.dto';
 import { FileService } from '../file/file.service';
 import { DeleteUserFromChatDto } from './dto/delete-user-from-shat.dto';
+import { DeleteChatType, DeleteUserFromChatType, FindMyChatType } from '../types/chat';
+import { DefaultException } from '../types/exception';
 
 @Injectable()
 export class ChatService {
@@ -20,7 +22,7 @@ export class ChatService {
   ){}
 
 
-  async create(createChatDto: CreateChatDto, avatar: Express.Multer.File) {
+  async create(createChatDto: CreateChatDto, avatar: Express.Multer.File): Promise<Chat> {
     try {
       const { clientsId, userId, name } = createChatDto;
       const avatarPath = await this.fileService.saveFile(avatar);
@@ -29,18 +31,18 @@ export class ChatService {
 
       const userChat = await this.userChatsRepository.create({ chatId: chat.id, userId: userId })
 
-
       JSON.parse(clientsId).forEach(async (item) => {
         await this.userChatsRepository.create({ chatId: chat.id, userId: item})
       })
 
-      return {chat}
+      return chat
     } catch(error) {
       return handleError(error)
     }
   }
 
-  async findMyChats(userId: string) {
+
+  async findMyChats(userId: string): Promise<FindMyChatType> {
     try {
       const alluserChats = await this.userChatsRepository.findAll({ where: { userId }});
 
@@ -48,7 +50,8 @@ export class ChatService {
         const chat = await this.userChatsRepository.findAll({ where: { chatId: item.chatId }, include: [
             {
               model: this.usersRepository,
-              as: "user"
+              as: "user",
+              attributes: { exclude: ["privateKey"]}
             },
             {
               model: this.chatsRepository,
@@ -67,6 +70,7 @@ export class ChatService {
     }
   }
 
+
   async addUsersToChat(addUserToChatDto: AddUsersToChatDto, chatId: string) {
     try {
       const { usersId } = addUserToChatDto;
@@ -80,6 +84,7 @@ export class ChatService {
       return handleError(error)
     }
   }
+
 
   async updateChat(
     updateChatDto: UpdateChatDto,
@@ -112,7 +117,6 @@ export class ChatService {
         })
       }
 
-
       const newChat = await this.chatsRepository.findOne({ where: { id: chatId }})
 
       return newChat
@@ -121,7 +125,8 @@ export class ChatService {
     }
   }
 
-  async deleteUsersFromChat(deleteUserFromChatDto: DeleteUserFromChatDto, chatId: string) {
+
+  async deleteUsersFromChat(deleteUserFromChatDto: DeleteUserFromChatDto, chatId: string): Promise<DeleteUserFromChatType> {
     const { usersId } = deleteUserFromChatDto;
     try {
       usersId.forEach(async (userId) => {
@@ -137,7 +142,8 @@ export class ChatService {
     }
   }
 
-  async deleteChat(chatId: string) {
+
+  async deleteChat(chatId: string): Promise<DeleteChatType> {
     try {
       const chat = await this.chatsRepository.findOne<Chat>({ where: { id: chatId }});
 
