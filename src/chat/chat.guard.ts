@@ -1,7 +1,6 @@
 import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Request } from "express";
-import { Observable } from "rxjs";
 import { jwtConstants } from "../auth/constants";
 import { Chat } from "./entities/chat.entity";
 

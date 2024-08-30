@@ -28,3 +28,5 @@ export class Chat extends Model {
   })
   users: UserChat[]
 }
+
+
